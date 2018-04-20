@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Industry Employment Visualization</title>
+        <script type="text/javascript" src="d3/d3.js"></script>
+    </head>
+    <body>
+        <script>
+
+        var margin = {top: 100, right: 20, bottom: 20, left: 250},
+            width = 1200 - margin.right - margin.left,
+            height = 800 - margin.top - margin.bottom;
+
+        var formatPercent = d3.format(".0%");
+
+        var x = d3.scaleLinear()
+            .range([0, width]);
+
+        var y = d3.scaleBand()
+            .rangeRound([0, height])
+            .padding(0.1);
+
+        var col = d3.scaleOrdinal()
+            .range(["#e41a1c",
+                    "#377eb8",
+                    "#4daf4a",
+                    "#984ea3"])
+
+        var xAxis = d3.axisTop()
+            .scale(x)
+            .tickFormat(formatPercent);
+
+        var yAxis = d3.axisLeft()
+            .scale(y);
+
+        var svg = d3.select("body")
+                    .append("svg")
+                    .attr("width", width + margin.right + margin.left)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var rowConverter = function(d) {
+            return {
+                area_fips: d.area_fips,
+                area_title: d.area_title,
+                industry_code: d.industry_code,
+                industry_title: d.industry_title,
+                local_pct_annual_avg_emplvl: +d.local_pct_annual_avg_emplvl,
+                local_pct_total_annual_wages: +d.local_pct_total_annual_wages,
+                us_pct_annual_avg_emplvl: +d.us_pct_annual_avg_emplvl,
+                us_pct_total_annual_wages: +d.us_pct_total_annual_wages,
+                region: d.region
+            };
+        }
+
+        d3.csv("/data_cleaned/viz_data.csv", rowConverter).then(function(data) {
+
+            var sort_y = function(a, b) { 
+                return d3.descending(a.us_pct_annual_avg_emplvl, b.us_pct_annual_avg_emplvl); 
+            }
+
+            x.domain([0, d3.max(data, function(d) { return d.local_pct_annual_avg_emplvl; })]);
+            y.domain(data.sort(sort_y).map(function(d) { return d.industry_title; }));
+
+            svg.append("g")
+                .attr("class", "x axis")
+                .call(xAxis);
+
+            svg.append("g")
+                .attr("class", "y axis")
+                .call(yAxis);
+            
+            // draw bars
+
+            // first draw static grey bars in the background
+            svg.selectAll(".bar-background")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("class", "bar-background")
+                .attr("x", function(d) { return x(d.local_pct_annual_avg_emplvl) - 2; })
+                .attr("y", function(d) { return y(d.industry_title); })
+                .attr("height", y.bandwidth())
+                .attr("width", 4)
+                .attr("fill", "#d3d3d3");
+
+            // then draw bars colored by region that can be toggled on/off
+            svg.selectAll(".bar-foreground")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("class", "bar-foreground")
+                .attr("x", function(d) { return x(d.local_pct_annual_avg_emplvl) - 2; })
+                .attr("y", function(d) { return y(d.industry_title); })
+                .attr("height", y.bandwidth())
+                .attr("width", 4)
+                .attr("fill", function(d) { return col(d.region); })
+                .attr("opacity", 1.0);
+
+            // draw toggle buttons
+            var regionButton = svg.selectAll("g .region-button")
+                .data(col.domain())
+                .enter()
+                .append("g")
+                .attr("class", "region-button")
+                .attr("id", function(d) { return d.toLowerCase(); })
+                .attr("transform", function(d, i){ return "translate("+ i*80 +",-55)"; })
+
+            regionButton.append("rect")
+                .attr("height", 25)
+                .attr("width", 70)
+                .attr("fill", function(d) { return col(d); });
+
+            regionButton.append("text")
+                .attr("dx", 35)
+                .attr("dy", 17)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("font-family", "sans-serif")
+                .attr("fill", "white")
+                .text(function (d) { return d; });
+
+            // add toggle interaction
+            function toggleRegion(obj, region) {
+
+                // check toggle state
+                var toggleOn = (obj.select("rect").attr("opacity") == 1.0);
+
+                if (toggleOn) {
+
+                    obj.select("rect")
+                        .attr("opacity", 0.25);
+                    
+                    obj.select("text")
+                        .attr("fill", "black");
+
+                    svg.selectAll(".bar-foreground")
+                        .data(data)
+                        .filter(function(d) { return d.region == region})
+                        .attr("opacity", 0);
+
+                } else {
+
+                    obj.select("rect")
+                        .attr("opacity", 1.0);
+                    
+                    obj.select("text")
+                        .attr("fill", "white");
+
+                    svg.selectAll(".bar-foreground")
+                        .data(data)
+                        .filter(function(d) { return d.region == region})
+                        .attr("opacity", 1.0);
+
+                }
+
+            }
+
+            // bind toggle interaction to button
+            svg.select("#midwest").on("click", function() { toggleRegion(d3.select(this), "Midwest")} );
+            svg.select("#west").on("click", function() { toggleRegion(d3.select(this), "West")} );
+            svg.select("#northeast").on("click", function() { toggleRegion(d3.select(this), "Northeast")} );
+            svg.select("#south").on("click", function() { toggleRegion(d3.select(this), "South")} );
+
+        });
+
+        </script>
+    </body>
+</html>
