@@ -43,26 +43,36 @@
 
         var rowConverter = function(d) {
             return {
-                area_fips: d.area_fips,
+                id: d.id,
+                year: +d.year,
                 area_title: d.area_title,
-                industry_code: d.industry_code,
                 industry_title: d.industry_title,
-                local_pct_annual_avg_emplvl: +d.local_pct_annual_avg_emplvl,
-                local_pct_total_annual_wages: +d.local_pct_total_annual_wages,
-                us_pct_annual_avg_emplvl: +d.us_pct_annual_avg_emplvl,
-                us_pct_total_annual_wages: +d.us_pct_total_annual_wages,
+                industry_emplvl: +d.industry_emplvl,
+                total_emplvl: +d.total_emplvl,
+                industry_emp_pct: +d.industry_emp_pct,
+                industry_emp_pct_us: +d.industry_emp_pct_us,
                 region: d.region
             };
         }
 
         d3.csv("/data_cleaned/viz_data.csv", rowConverter).then(function(data) {
 
+            //console.log(data[0]);
+
+            var data_sub = [];
+
+            for (var i = 0; i < data.length; i++) {
+                    if (data[i].year == 2016) {
+                        data_sub.push(data[i]);
+                    }    
+                }
+
             var sort_y = function(a, b) { 
-                return d3.descending(a.us_pct_annual_avg_emplvl, b.us_pct_annual_avg_emplvl); 
+                return d3.descending(a.industry_emp_pct_us, b.industry_emp_pct_us); 
             }
 
-            x.domain([0, d3.max(data, function(d) { return d.local_pct_annual_avg_emplvl; })]);
-            y.domain(data.sort(sort_y).map(function(d) { return d.industry_title; }));
+            x.domain([0, d3.max(data_sub, function(d) { return d.industry_emp_pct; })]);
+            y.domain(data_sub.sort(sort_y).map(function(d) { return d.industry_title; }));
 
             svg.append("g")
                 .attr("class", "x axis")
@@ -71,28 +81,28 @@
             svg.append("g")
                 .attr("class", "y axis")
                 .call(yAxis);
-            
+
             // draw bars
 
-            // first draw static grey bars in the background
+            // first draw a set of grey bars that will be in the background
             svg.selectAll(".bar-background")
-                .data(data)
+                .data(data_sub, function(d) { return d.id; })
                 .enter()
                 .append("rect")
                 .attr("class", "bar-background")
-                .attr("x", function(d) { return x(d.local_pct_annual_avg_emplvl) - 2; })
+                .attr("x", function(d) { return x(d.industry_emp_pct) - 2; })
                 .attr("y", function(d) { return y(d.industry_title); })
                 .attr("height", y.bandwidth())
                 .attr("width", 4)
                 .attr("fill", "#d3d3d3");
 
-            // then draw bars colored by region that can be toggled on/off
+            // then draw a set that will be in the foreground, and will be toggled on/off by region
             svg.selectAll(".bar-foreground")
-                .data(data)
+                .data(data_sub, function(d) { return d.id; })
                 .enter()
                 .append("rect")
                 .attr("class", "bar-foreground")
-                .attr("x", function(d) { return x(d.local_pct_annual_avg_emplvl) - 2; })
+                .attr("x", function(d) { return x(d.industry_emp_pct) - 2; })
                 .attr("y", function(d) { return y(d.industry_title); })
                 .attr("height", y.bandwidth())
                 .attr("width", 4)
@@ -100,66 +110,23 @@
                 .attr("visibility", "visible");
 
             // draw buttons for each region
-            var regionButton = [{region: "All Regions", class: "region-all"},
-                                {region: "West",        class: "region-west"},
-                                {region: "Midwest",     class: "region-midwest"},
-                                {region: "South",       class: "region-south"},
-                                {region: "Northeast",   class: "region-northeast"}];            
+            var regionList = [  {region: "All Regions", id: "region-all"},
+                                {region: "West",        id: "region-west"},
+                                {region: "Midwest",     id: "region-midwest"},
+                                {region: "South",       id: "region-south"},
+                                {region: "Northeast",   id: "region-northeast"}];            
 
-            // first draw the "off" buttons
-            var regionOff = svg.selectAll(".region-off")
-                .data(regionButton)
+            var regionButton = svg.selectAll(".region-button")
+                .data(regionList)
                 .enter()
                 .append("g")
-                .attr("class", function(d) { return "region-off " + d.class; });
+                .attr("class", "region-button")
+                .attr("id", function(d) { return d.id; })
+                .attr("transform", function(d, i) { 
+                    return "translate(" + i * 80 + ", -60)"; 
+                });
 
-            regionOff.append("rect")
-                //.attr("class", function(d) { return "region-off " + d.class; })
-                .attr("x", function(d, i) { return i * 80; })
-                .attr("y", -60)
-                .attr("width", 70)
-                .attr("height", 30)
-                .attr("stroke-width", 2)
-                .attr("stroke", function(d) { 
-                    if(d.region == "All Regions") {
-                        return "black";
-                    } else {
-                        return col(d.region); 
-                    }
-                })
-                .attr("fill", "white");
-
-            regionOff.append("text")
-                .attr("x", function(d, i) { return i * 80; })
-                .attr("y", -60)
-                .attr("dx", 35)
-                .attr("dy", 18)
-                //.attr("width", 70)
-                //.attr("height", 30)
-                .attr("text-anchor", "middle")
-                .attr("font-family", "sans-serif")
-                .attr("font-size", "12px")
-                .attr("fill", function(d) { 
-                    if(d.region == "All Regions") {
-                        return "black";
-                    } else {
-                        return col(d.region); 
-                    }
-                })
-                .text(function(d) { return d.region; });
-
-            // then draw the "on" buttons
-            var regionOn = svg.selectAll(".region-on")
-                .data(regionButton)
-                .enter()
-                .append("g")
-                .attr("class", function(d) { return "region-on " + d.class; })
-                .attr("visibility", "hidden");
-
-            regionOn.append("rect")
-                //.attr("class", function(d) { return "region-on " + d.class; })
-                .attr("x", function(d, i) { return i * 80; })
-                .attr("y", -60)
+            regionButton.append("rect")
                 .attr("width", 70)
                 .attr("height", 30)
                 .attr("stroke-width", 2)
@@ -175,148 +142,106 @@
                         return "black";
                     } else {
                         return col(d.region); 
+                    }
+                })
+                .attr("fill-opacity", function(d) { 
+                    if(d.region == "All Regions") {
+                        return 1;
+                    } else {
+                        return 0; 
                     }
                 });
-                //.attr("visibility", "hidden");
 
-            regionOn.append("text")
-                .attr("x", function(d, i) { return i * 80; })
-                .attr("y", -60)
+            regionButton.append("text")
                 .attr("dx", 35)
-                .attr("dy", 18)
+                .attr("dy", 19)
                 .attr("text-anchor", "middle")
                 .attr("font-family", "sans-serif")
                 .attr("font-size", "12px")
-                .attr("fill", "white")
+                .attr("fill", function(d) { 
+                    if(d.region == "All Regions") {
+                        return "white";
+                    } else {
+                        return col(d.region); 
+                    }
+                })
                 .text(function(d) { return d.region; });
 
             // create toggle action
-            svg.select(".region-west.region-off")
-                .on("click", function() {
+            function toggleRegion(obj, region) {
 
-                    // turn all "on" buttons "off"..
-                    svg.selectAll(".region-on")
-                        .attr("visibility", "hidden");
+                // "turn off" all region buttons
+                var regionButton = svg.selectAll(".region-button");
 
-                    // ..except the region you are clicking on
-                    svg.select(".region-west.region-on")
-                        .attr("visibility", "visible");
+                regionButton.selectAll("rect")
+                    .attr("fill-opacity", 0);
 
-                    // do the same for the bars
-                    svg.selectAll(".bar-foreground")
-                        .attr("visibility", "hidden");
+                regionButton.selectAll("text")
+                    .attr("fill", function(d) { 
+                        if(d.region == "All Regions") {
+                            return "black";
+                        } else {
+                            return col(d.region); 
+                        }
+                    });
 
-                    svg.selectAll(".bar-foreground")
-                        .data(data)
-                        .filter(function(d) {
-                            return d.region == "West";
-                        })
-                        .attr("visibility", "visible");
-                });
+                // "turn on" current region button
+                obj.select("rect")
+                    .attr("fill-opacity", 1);
 
-            svg.select(".region-midwest.region-off")
-                .on("click", function() {
-                    svg.selectAll(".region-on")
-                        .attr("visibility", "hidden");
+                obj.select("text")
+                    .attr("fill", "white");
 
-                    svg.select(".region-midwest.region-on")
-                        .attr("visibility", "visible");
+                // highlight selected region in chart
+                svg.selectAll(".bar-foreground")
+                    .attr("visibility", function(d) { 
+                        if(d.region == region) {
+                            return "visible"; 
+                        } else {
+                            return "hidden";
+                        }
+                    });
 
-                    svg.selectAll(".bar-foreground")
-                        .attr("visibility", "hidden");
+            }    
 
-                    svg.selectAll(".bar-foreground")
-                        .data(data)
-                        .filter(function(d) {
-                            return d.region == "Midwest";
-                        })
-                        .attr("visibility", "visible");
-                });
+            // bind toggle action to region buttons
+            svg.select("#region-midwest").on("click", function() { toggleRegion(d3.select(this), "Midwest")} );
+            svg.select("#region-west").on("click", function() { toggleRegion(d3.select(this), "West")} );
+            svg.select("#region-northeast").on("click", function() { toggleRegion(d3.select(this), "Northeast")} );
+            svg.select("#region-south").on("click", function() { toggleRegion(d3.select(this), "South")} );
 
-            svg.select(".region-south.region-off")
-                .on("click", function() {
-                    svg.selectAll(".region-on")
-                        .attr("visibility", "hidden");
-                    svg.select(".region-south.region-on")
-                        .attr("visibility", "visible");
-
-                    svg.selectAll(".bar-foreground")
-                        .attr("visibility", "hidden");
-
-                    svg.selectAll(".bar-foreground")
-                        .data(data)
-                        .filter(function(d) {
-                            return d.region == "South";
-                        })
-                        .attr("visibility", "visible");
-                });
-
-            svg.select(".region-northeast.region-off")
-                .on("click", function() {
-                    svg.selectAll(".region-on")
-                        .attr("visibility", "hidden");
-                    svg.select(".region-northeast.region-on")
-                        .attr("visibility", "visible");
-
-                    svg.selectAll(".bar-foreground")
-                        .attr("visibility", "hidden");
-
-                    svg.selectAll(".bar-foreground")
-                        .data(data)
-                        .filter(function(d) {
-                            return d.region == "Northeast";
-                        })
-                        .attr("visibility", "visible");
-                });
-
-            svg.select(".region-all.region-off")
-                .on("click", function() {
-                    svg.selectAll(".region-on")
-                        .attr("visibility", "hidden");
-                    svg.select(".region-all.region-on")
-                        .attr("visibility", "visible");
-
-                    // turn all regions on
-                    svg.selectAll(".bar-foreground")
-                        .attr("visibility", "visible");
-                });
-
-            // // create toggle action
-            // svg.select(".region-west.region-off")
+            // special case for the "All Regions" button
+            svg.select("#region-all").on("click", function() { 
                 
-            //     .on("click", function() {
+                // "turn off" all region buttons
+                var regionButton = svg.selectAll(".region-button");
 
-            //         // turn off all "on" buttons ..
-            //         svg.select(".region-on")
-            //             .attr("visibility", "hidden");
+                regionButton.selectAll("rect")
+                    .attr("fill-opacity", 0);
 
-            //         // .. except the region you are clicking
-            //         svg.select(".region-west.region-on")
-            //             .attr("visibility", "visible");
+                regionButton.selectAll("text")
+                    .attr("fill", function(d) { 
+                        if(d.region == "All Regions") {
+                            return "black";
+                        } else {
+                            return col(d.region); 
+                        }
+                    });
 
-            //     });
+                // "turn on" current region button
+                var obj = d3.select(this);
 
-            // svg.select(".region-midwest.region-off")
-                
-            //     .on("click", function() {
+                obj.select("rect")
+                    .attr("fill-opacity", 1);
 
-            //         svg.select(".region-on")
-            //             .attr("visibility", "hidden");
+                obj.select("text")
+                    .attr("fill", "white");
 
-            //         svg.select(".region-midwest.region-on")
-            //             .attr("visibility", "visible");
-                        
-            //     });
+                // highlight all regions
+                svg.selectAll(".bar-foreground")
+                    .attr("visibility", "visible");
 
-            
-
-            
-
-            // bind toggle interaction to button
-            // svg.select(".region-midwest").on("click", function() { toggleRegion(d3.select(this), "Midwest")} );
-            // svg.select(".region-west").on("click", function() { toggleRegion(d3.select(this), "West")} );
-            // svg.select(".region-northeast").on("click", function() { toggleRegion(d3.select(this), "Northeast")} );
-            // svg.select(".region-south").on("click", function() { toggleRegion(d3.select(this), "South")} );
+            });
 
         });
 
