@@ -4,6 +4,31 @@
         <meta charset="utf-8" />
         <title>Industry Employment Visualization</title>
         <script type="text/javascript" src="d3/d3.js"></script>
+        <style type="text/css">    
+            #tooltip {
+                position: absolute;
+                width: auto;
+                height: auto;
+                padding: 2px;
+                background-color: white;
+                border-color: black;
+                border-style: solid;
+                border-width: 1px;
+                pointer-events: none;
+            }
+    
+            #tooltip.hidden {
+                display: none;
+            }
+    
+            #tooltip p {
+                margin: 0;
+                font-family: sans-serif;
+                font-size: 12px;
+                line-height: 12px;
+            }
+        
+        </style>
     </head>
     <body>
         <script>
@@ -61,6 +86,7 @@
 
             var data_sub = [];
 
+            // default to showing 2016 data
             for (var i = 0; i < data.length; i++) {
                     if (data[i].year == 2016) {
                         data_sub.push(data[i]);
@@ -71,7 +97,7 @@
                 return d3.descending(a.industry_emp_pct_us, b.industry_emp_pct_us); 
             }
 
-            x.domain([0, d3.max(data_sub, function(d) { return d.industry_emp_pct; })]);
+            x.domain([0, d3.max(data, function(d) { return d.industry_emp_pct; })]);
             y.domain(data_sub.sort(sort_y).map(function(d) { return d.industry_title; }));
 
             svg.append("g")
@@ -82,7 +108,7 @@
                 .attr("class", "y axis")
                 .call(yAxis);
 
-            // draw bars
+            /************************************** draw bars **************************************/
 
             // first draw a set of grey bars that will be in the background
             svg.selectAll(".bar-background")
@@ -94,6 +120,7 @@
                 .attr("y", function(d) { return y(d.industry_title); })
                 .attr("height", y.bandwidth())
                 .attr("width", 4)
+                // fill background bars with grey
                 .attr("fill", "#d3d3d3");
 
             // then draw a set that will be in the foreground, and will be toggled on/off by region
@@ -106,10 +133,34 @@
                 .attr("y", function(d) { return y(d.industry_title); })
                 .attr("height", y.bandwidth())
                 .attr("width", 4)
+                // fill foreground bars according to region, default to showing all regions
                 .attr("fill", function(d) { return col(d.region); })
-                .attr("visibility", "visible");
+                .attr("visibility", "visible")
+                .on("mouseover", function(d){
 
-            // draw buttons for each region
+                    //Get bar position
+                    var xPos = parseFloat(d3.select(this).attr("x")) + margin.left + 8;
+                    var yPos = parseFloat(d3.select(this).attr("y")) + margin.top - 12;
+
+                    //Update tooltip position & value
+                    d3.select("#tooltip")
+                        .style("left", xPos + "px")
+                        .style("top", yPos + "px")
+                        .select("#value")
+                        .text(d.area_title + ": " + formatPercent(d.industry_emp_pct));
+
+                    //Show tooltip
+                    d3.select("#tooltip").classed("hidden", false);
+
+                })
+                .on("mouseout", function(d) {
+
+                    //Hide tooltip
+                    d3.select("#tooltip").classed("hidden", true);
+
+                });
+
+            /********************************** draw region buttons **********************************/
             var regionList = [  {region: "All Regions", id: "region-all"},
                                 {region: "West",        id: "region-west"},
                                 {region: "Midwest",     id: "region-midwest"},
@@ -137,6 +188,8 @@
                         return col(d.region); 
                     }
                 })
+                // default to "on" position for "All Regions" (opaque fill, white font),
+                // "off" position for all others
                 .attr("fill", function(d) { 
                     if(d.region == "All Regions") {
                         return "black";
@@ -158,19 +211,69 @@
                 .attr("text-anchor", "middle")
                 .attr("font-family", "sans-serif")
                 .attr("font-size", "12px")
+                .text(function(d) { return d.region; })
+                // default to "on" position for "All Regions" (opaque fill, white font),
+                // "off" position for all others
                 .attr("fill", function(d) { 
                     if(d.region == "All Regions") {
                         return "white";
                     } else {
                         return col(d.region); 
                     }
-                })
-                .text(function(d) { return d.region; });
+                });
 
-            // create toggle action
+            /*********************************** draw year buttons ************************************/
+            var yearList = [    {year: 2016, id: "year-2016"},
+                                {year: 2010, id: "year-2010"},
+                                {year: 2000, id: "year-2000"},
+                                {year: 1990, id: "year-1990"}];            
+
+            var yearButton = svg.selectAll(".year-button")
+                .data(yearList)
+                .enter()
+                .append("g")
+                .attr("class", "year-button")
+                .attr("id", function(d) { return d.id; })
+                .attr("transform", function(d, i) { 
+                    return "translate(" + (width - 70 - i * 80) + ", -60)"; 
+                });
+
+            yearButton.append("rect")
+                .attr("width", 70)
+                .attr("height", 30)
+                .attr("stroke-width", 2)
+                .attr("stroke", "black")
+                // default to "on" position for 2016 (black fill, white font),
+                // "off" position for all others (white fill, black font)
+                .attr("fill", function(d) { 
+                    if(d.year == 2016) {
+                        return "black";
+                    } else {
+                        return "white"; 
+                    }
+                });
+
+            yearButton.append("text")
+                .attr("dx", 35)
+                .attr("dy", 19)
+                .attr("text-anchor", "middle")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "12px")
+                .text(function(d) { return d.year; })
+                // default to "on" position for 2016 (black fill, white font),
+                // "off" position for all others (white fill, black font)
+                .attr("fill", function(d) { 
+                    if(d.year == 2016) {
+                        return "white";
+                    } else {
+                        return "black"; 
+                    }
+                });
+            
+            /********************************** add action to region buttons **********************************/
             function toggleRegion(obj, region) {
 
-                // "turn off" all region buttons
+                // set all region buttons to "off"
                 var regionButton = svg.selectAll(".region-button");
 
                 regionButton.selectAll("rect")
@@ -185,7 +288,7 @@
                         }
                     });
 
-                // "turn on" current region button
+                // set current region button to "on"
                 obj.select("rect")
                     .attr("fill-opacity", 1);
 
@@ -202,7 +305,7 @@
                         }
                     });
 
-            }    
+            } 
 
             // bind toggle action to region buttons
             svg.select("#region-midwest").on("click", function() { toggleRegion(d3.select(this), "Midwest")} );
@@ -213,7 +316,7 @@
             // special case for the "All Regions" button
             svg.select("#region-all").on("click", function() { 
                 
-                // "turn off" all region buttons
+                // set all region buttons to "off"
                 var regionButton = svg.selectAll(".region-button");
 
                 regionButton.selectAll("rect")
@@ -228,7 +331,7 @@
                         }
                     });
 
-                // "turn on" current region button
+                // set current region button to "on"
                 var obj = d3.select(this);
 
                 obj.select("rect")
@@ -237,14 +340,71 @@
                 obj.select("text")
                     .attr("fill", "white");
 
-                // highlight all regions
+                // show all regions in chart
                 svg.selectAll(".bar-foreground")
                     .attr("visibility", "visible");
 
             });
 
+            /********************************** add action to year buttons **********************************/
+
+            function toggleYear(obj, year) {
+
+                // set all year buttons to "off"
+                var regionButton = svg.selectAll(".year-button");
+
+                regionButton.selectAll("rect")
+                    .attr("fill", "white");
+
+                regionButton.selectAll("text")
+                    .attr("fill", "black");
+
+                // set current year button to "on"
+                obj.select("rect")
+                    .attr("fill", "black");
+
+                obj.select("text")
+                    .attr("fill", "white");
+
+                // change data selection and re-draw bars
+                var data_sub = [];
+
+                for (var i = 0; i < data.length; i++) {
+                        if (data[i].year == year) {
+                            data_sub.push(data[i]);
+                        }    
+                    }
+
+                // first re-draw background bars
+                svg.selectAll(".bar-background")
+                    .data(data_sub, function(d) { return d.id; })
+                    .transition()
+                    .duration(1000)
+                    .attr("x", function(d) { return x(d.industry_emp_pct) - 2; });
+
+                // then re-draw foreground bars
+                svg.selectAll(".bar-foreground")
+                    .data(data_sub, function(d) { return d.id; })
+                    .transition()
+                    .duration(1000)
+                    .attr("x", function(d) { return x(d.industry_emp_pct) - 2; });
+
+            }   
+
+            // bind toggle action to region buttons
+            svg.select("#year-2016").on("click", function() { toggleYear(d3.select(this), 2016)} );
+            svg.select("#year-2010").on("click", function() { toggleYear(d3.select(this), 2010)} );
+            svg.select("#year-2000").on("click", function() { toggleYear(d3.select(this), 2000)} );
+            svg.select("#year-1990").on("click", function() { toggleYear(d3.select(this), 1990)} );
+
+
         });
 
         </script>
+        <div>
+            <div id="tooltip" class="hidden">
+                <p id="value"></p>
+            </div>
+        </div>
     </body>
 </html>
