@@ -7,9 +7,7 @@
         <style type="text/css">    
             
             body {
-                /*font-family: Courier, monospace;*/
                 font-family: Helvetica, Arial, sans-serif;
-                text-transform: uppercase;
                 font-size: 12px;    
             }
 
@@ -25,15 +23,16 @@
             }
 
             .y-axis {
-                font-weight: bolder;
+                font-weight: bold;
                 font-size: 14px;  
                 text-transform: initial; 
             }
 
-            /* .region-button,
-            .year-button {
-                border-radius: 20px;
-            } */
+            .region-button,
+            .year-button,
+            .button-caption {
+                text-transform: uppercase;
+            }
 
             #tooltip {
                 position: absolute;
@@ -53,8 +52,6 @@
     
             #tooltip p {
                 margin: 0;
-                /* font-family: Helvetica, Arial, sans-serif;
-                font-size: 12px; */
                 line-height: 12px;
                 text-transform: initial; 
             }
@@ -64,7 +61,7 @@
     <body>
         <script>
 
-        var margin = {top: 100, right: 20, bottom: 20, left: 350},
+        var margin = {top: 100, right: 20, bottom: 40, left: 350},
             width = 1200 - margin.right - margin.left,
             height = 800 - margin.top - margin.bottom;
 
@@ -82,13 +79,6 @@
                     "#377eb8",
                     "#4daf4a",
                     "#984ea3"]);
-
-        var xAxis = d3.axisTop()
-            .scale(x)
-            .tickFormat(formatPercent);
-
-        var yAxis = d3.axisLeft()
-            .scale(y);
 
         var svg = d3.select("body")
                     .append("svg")
@@ -164,7 +154,12 @@
                         .tickFormat("")
                 );
 
-            
+            svg.append("text")
+                .attr("class", "x-axis-title")
+                .attr("transform", "translate(" + width / 2 + "," + height + ")")
+                .attr("dy", "30px")
+                .attr("text-anchor", "middle")
+                .text("Percent of workforce employed in industry")
 
             /************************************** draw bars **************************************/
 
@@ -259,8 +254,6 @@
             regionButton.append("rect")
                 .attr("width", 90)
                 .attr("height", 30)
-                //.attr("rx", 5)
-                //.attr("ry", 5)
                 .attr("stroke-width", 2)
                 .attr("stroke", function(d) { 
                     if(d.region == "All Regions") {
@@ -290,8 +283,6 @@
                 .attr("dx", 45)
                 .attr("dy", 19)
                 .attr("text-anchor", "middle")
-                // .attr("font-family", "sans-serif")
-                // .attr("font-size", "12px")
                 .text(function(d) { return d.region; })
                 // default to "on" position for "All Regions" (opaque fill, white font),
                 // "off" position for all others
@@ -343,8 +334,6 @@
             yearButton.append("rect")
                 .attr("width", 70)
                 .attr("height", 30)
-                //.attr("rx", 5)
-                //.attr("ry", 5)
                 .attr("stroke-width", 2)
                 .attr("stroke", "black")
                 // default to "on" position for 2016 (black fill, white font),
@@ -361,8 +350,6 @@
                 .attr("dx", 35)
                 .attr("dy", 19)
                 .attr("text-anchor", "middle")
-                // .attr("font-family", "sans-serif")
-                // .attr("font-size", "12px")
                 .text(function(d) { return d.year; })
                 // default to "on" position for 2016 (black fill, white font),
                 // "off" position for all others (white fill, black font)
