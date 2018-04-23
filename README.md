@@ -1,5 +1,27 @@
-Places, like people, are multi-dimensional beings. Among the many things that shape a place, economics is perhaps one of the most influential. Many places come to be known for it's major industries. For example, mention Los Angeles, and the film industry comes to mind. Mention New York, and you think of Wall Street. I live in a suburb near DC, which is of course known for it's large public and non-for-profit sector.
-Given that major industries play such a large role in the way we understand places, I decided to look at how the distribution of industries differ in different states, and how it might have changed over time. To create the following interactive chart, I gathered data from the Bureau of Labor Statistic's Quarterly Census of Employment and Wages. The data represents annual average employment and includes both private and public sectors. Each bar represents one state, and the placement of the bars represents percent of that state's workforce that is employed in the industry indicated on the left. 
-I thought it would be interesting to look at broad patterns by region and over time. Using the most recent year's data, we can see some regional variations in distribution of employment by industry. For example, in the west, relatively high percent of the workforce is employed in accomondation and food services, construction, agriculture, and mining; in mid west,we see a concentration in manufacturing, trade, management; northeast appears to specialize in health care and education services; while south seems to be a diverse mix of industries.
-Looking at distribution over time, the most salient change is the dramatic decrease in manufacturing, and increase in health care and social assistance. There is also a decrease in retail trade, and an increase in accomodation and food services, and education services. We also see a decrease in information (surprising!), agriculture, mining.
-Looking at the intersection of these dimensions is also interesting. Over the years, many places have caught up with the west in accomondation and food services. There is an increase in management, administrative and professional services, and agriculture. South moved to the top of accommodation and food, arts and entertainment. Northeast moving ahead on healthcare and education services, no longer leading the way in finance.
+#Distribution of employment by industry, by state
+
+The United States is a vast place with a diverse economic landscape. One way to characterize the economy of a place is by looking at the distribution of employment across industries. To get a sense of how the mix of industries differ across states, I decided to look at data from the Burea of Labor Statistic's Quarterly Census of Employment and Wages.
+
+In the interactive plot above, each row represents an industry, and each bar represnts a state. The position of the bars on the x-axis represents the industry's share of that state's total workforce. Click on the buttons above the charts to highlight regions and to see data for different years. Hover over the bars to see state names.
+
+##Patterns by region
+
+Focusing on one year's data at a time, we can spot some interesting patterns by region by examining where bars of the same color tend to concentrate in the distribution. For example, looking at 2016's data, we can clearly see how much more predominant **Manufacturing** is in the Midwest than in the West, since there are more blue bars to the right and more green bars to the left, with little overlap in between. 
+
+This is perhaps not too surprising. What is more surprising, to me at least, is the relative predominance of **Construction** and **Real estate** in the West -- perhaps a sign of the region's robust population growth and economic development -- and of **Finance and insurance** and **Management of Companies and enterprises** in the Midwest -- perhaps a result of the regions lower cost of operations compared to large coastal cities.
+
+##Patterns over time
+
+Switching between the years, we can see how employment distribution has changed over time. The most dramatic shift is probably the rise of employment in **Health care and social assistance** and the decline in **Manufacturing**. 
+
+##Patterns by region, over time
+
+The combination of regional patterns and changes over time reveals some interesting insights. For example, looking at 2016's data, I noticed that **Health care and social assistance**, and **Educational services**, appear to be more predominant in the Northeast than elsewhere in the country. However, back in 1990, this wasn't the case. The Midwest was almost on par with the Northeast in terms of percent of people employed in Health care and social assistance, and the West was ahead of the Northeast in terms of Educational services. The rise of Healthcare and Educational services in the Northeast appears to a trend that has developed in the last thirty years.
+
+Another interesting pattern I noticed is the increased predominance of **Accomodation and food services** in many states. Back in 1990, a few Western states stand out as having more employement in Accomodation and food services. In the last three decades, however, employment in Accomondation and food services have increased in other states, so that in 2016, there is no longer a clear division between the regions.
+
+---
+
+##Data notes
+
+The data comes from the Bureau of Labor Statistic's [Quarterly Census of Employment and Wages](https://www.bls.gov/cew/datatoc.htm). Percentages are calculated from annual averages of monthly employment levels, by dividing employment for a given industry by total employment for that state. Employment includes all ownership types (public and private). Industries represent NAICS Supersectors and the "Unclassified" category is not shown. Raw data and R script used to process the data can be found on my [github](https://github.com/kathyxiong/industry-concentration).
