@@ -22,6 +22,6 @@ Another interesting pattern I noticed is the increased predominance of **Accomod
 
 ---
 
-## Data notes
+### Data notes
 
 The data comes from the Bureau of Labor Statistic's [Quarterly Census of Employment and Wages](https://www.bls.gov/cew/datatoc.htm). Percentages are calculated from annual averages of monthly employment levels, by dividing employment for a given industry by total employment for that state. Employment includes all ownership types (public and private). Industries represent NAICS Supersectors and the "Unclassified" category is not shown. Raw data and R script used to process the data can be found on my [github](https://github.com/kathyxiong/industry-concentration).
